@@ -1,0 +1,7 @@
+Set of scripts to process and aggregate and provide insights that will be visualized by tableau
+
+1. Citibike
+Number of bike trips by year
+Number of bike trips by year and by gender
+Number of bike trips by year and by age
+Number of bike trips by year and by start station
