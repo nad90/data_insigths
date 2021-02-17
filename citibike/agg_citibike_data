@@ -2,7 +2,7 @@
 Process and aggregate the data by year
 Result :
 Returns 2 files: yearly_global_insights and yearly_geo_insights
-yearly_global_insights :
+yearly_user_insights :
     year, age, gender, number of bike trips
 yearly_geo_insights:
     year, latitude of the start station, longitude of the start station, number of bike trips
@@ -13,34 +13,44 @@ from config import dir_infos
 import os
 import pandas as pd
 
-data_dir = dir_infos.SRC_DATA_DIR_CB
-df_final = pd.DataFrame(columns=["year", "user_age_at_trip", "gender", "number_trips"])
+in_data_dir = dir_infos.SRC_DATA_DIR_CB
+out_data_dir=dir_infos.AGG_DATA_DIR_CB
+df_user_final = pd.DataFrame(columns=["year", "user_age_at_trip", "gender", "number_trips"])
 df_geo_final = pd.DataFrame(columns=["year", "name_station", "lat_start_station", "long_start_station", "number_trips"])
-list_files = os.listdir(data_dir)[2:4]
+list_files = os.listdir(in_data_dir)[2:4]
 i = 0
 
 for element in list_files:
     i += 1
     print("PROCESSING FILE %s/%s: %s " % (i, len(list_files), element))
-    df_el = pd.read_csv(data_dir + element, usecols=["starttime", "birth year", "gender","start station name","start station latitude","start station longitude"], header=0)
+    df_el = pd.read_csv(in_data_dir + element,
+                        usecols=["starttime", "birth year", "gender", "start station name", "start station latitude",
+                                 "start station longitude"], header=0)
     df_el["proc_year"] = pd.DatetimeIndex(df_el["starttime"]).year
     df_el["proc_birth_year"] = pd.to_numeric(df_el["birth year"], errors="coerce")
 
     df_el["proc_user_age_at_trip"] = df_el["proc_year"] - df_el[
         "proc_birth_year"]  # age of the user at the time of the trip
-    df_group = df_el.groupby(["proc_year", "proc_user_age_at_trip", "gender"], dropna=False).size().reset_index(
+    df_user_group = df_el.groupby(["proc_year", "proc_user_age_at_trip", "gender"], dropna=False).size().reset_index(
         name="number_trips")
 
-    df_final = pd.concat(
-        [df_final, df_group.rename(columns={"proc_year": "year", "proc_user_age_at_trip": "user_age_at_trip"})], axis=0)
+    df_user_final = pd.concat(
+        [df_user_final, df_user_group.rename(columns={"proc_year": "year", "proc_user_age_at_trip": "user_age_at_trip"})], axis=0)
 
-    #Geographical part
-    df_geo_group=df_el.groupby(["proc_year","start station name","start station latitude","start station longitude"]).size().reset_index(name="number_trips")
+    # Geographical part
+    df_geo_group = df_el.groupby(
+        ["proc_year", "start station name", "start station latitude", "start station longitude"]).size().reset_index(
+        name="number_trips")
 
-    df_geo_final=pd.concat([df_geo_final, df_geo_group.rename({"proc_year": "year","start station name": "name_station","start station latitude":"lat_start_station","start station longitude":"long_start_station" })], axis=0)
+    df_geo_final = pd.concat([df_geo_final, df_geo_group.rename(
+        columns={"proc_year": "year", "start station name": "name_station",
+                 "start station latitude": "lat_start_station", "start station longitude": "long_start_station"})],
+                             axis=0)
 
+df_user_final = df_user_final.groupby(["year", "user_age_at_trip", "gender"], dropna=False, as_index=False).sum("number_trips")
+df_geo_final = df_geo_final.groupby(["year", "name_station", "lat_start_station", "long_start_station"], dropna=False,
+                                    as_index=False).sum("number_trips")
 
-
-df_final = df_final.groupby(["year", "user_age_at_trip", "gender"], dropna=False, as_index=False).sum("number_trips")
-
-print(df_geo_final.describe)
+print("WRITING FILES")
+df_user_final.to_csv(out_data_dir+"user_data.csv", index=False)
+df_geo_final.to_csv(out_data_dir+"geo_data.csv", index=False)
