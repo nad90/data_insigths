@@ -13,11 +13,12 @@ from config import dir_infos
 import os
 import pandas as pd
 
-in_data_dir = dir_infos.SRC_DATA_DIR_CB
+#in_data_dir = dir_infos.SRC_DATA_DIR_CB
+in_data_dir = dir_infos.TST_DATA_DIR_CB
 out_data_dir=dir_infos.AGG_DATA_DIR_CB
 df_user_final = pd.DataFrame(columns=["year", "user_age_at_trip", "gender", "number_trips"])
 df_geo_final = pd.DataFrame(columns=["year", "name_station", "lat_start_station", "long_start_station", "number_trips"])
-list_files = os.listdir(in_data_dir)[2:4]
+list_files = os.listdir(in_data_dir)
 i = 0
 
 for element in list_files:
