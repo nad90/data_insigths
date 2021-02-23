@@ -50,7 +50,7 @@ for file in list_files:
 print("GETTING INSIGHTS THROUGH SQL")
 query_user = "SELECT year, user_age_at_trip, gender, COUNT(1)  as number_trips " \
              "FROM ( " \
-             "SELECT  year(start_time) as year , if(birth_year LIKE'%N%',NULL, (start_time)-birth_year)  as user_age_at_trip, birth_year, gender " \
+             "SELECT  year(start_time) as year , if(birth_year LIKE'%N%',NULL, (start_time)-birth_year)  as user_age_at_trip, birth_year, CAST(gender as SIGNED) as gender " \
     f"FROM {table_name})tab " \
              "GROUP BY year, user_age_at_trip, gender " \
     # "ORDER BY year, user_age_at_trip desc, gender;"
@@ -61,23 +61,32 @@ print("COMPARING INSIGHTS")
 
 df_user_agg = pd.read_csv(agg_data_dir + "user_data.csv")
 
-if df_user_test.equals(df_user_agg):
-    print("TEST USERS INSIGHTS: OK ")
-else:
-    print("TEST USERS INSIGHTS: KO ")
-
 df_user_agg.fillna(-1, inplace=True)
-df_user_agg.astype("int64").dtypes
-
 df_user_test.fillna(-1, inplace=True)
-df_user_test.astype("int64").dtypes
+#df_user_test.astype({"gender":"int64"}).dtypes
+#pd.to_numeric(df_user_test["gender"])
 
 df_user_agg.sort_values(by=["year", "user_age_at_trip", "gender"], ascending=[True, False, True], inplace=True)
 df_user_test.sort_values(by=["year", "user_age_at_trip", "gender"], ascending=[True, False, True], inplace=True)
-
-print(df_user_agg.equals(df_user_test))
+print ("YOUPI", df_user_test.equals(df_user_agg))
+#print(pd.concat([df_user_test, df_user_agg]).drop_duplicates(keep=False).head())
 print(pd.concat([df_user_test, df_user_agg]).drop_duplicates(keep=False).shape)
+if(pd.concat([df_user_test, df_user_agg]).drop_duplicates(keep=False).shape)[0]==0:
+    print("TEST USERS INSIGHTS: OK ")
+else:
+    pd.concat([df_user_test.add_prefix("TEST_"),df_user_agg.add_prefix("SCRIPT_")], axis=1).to_csv(agg_data_dir+"TEST_doublons.csv", index=False)
 """
+
+print("df_user_test.dtypes")
+print(df_user_test.dtypes)
+print("df_user_agg.dtypes")
+print(df_user_agg.dtypes)
+
+
+
+
+
+
 df_user_agg.reset_index( inplace=True, drop=True)
 
 
