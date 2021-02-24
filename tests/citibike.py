@@ -26,7 +26,7 @@ columns_list = ["trip_duration", "start_time", "stop_time", "start_station_id", 
                 "end_station_longitude", "bike_id", "user_type", "birth_year", "gender"]
 
 print("PROCESS BEGINS")
-"""
+
 print("CREATING TABLE IF NOT EXISTS")
 
 try:
@@ -73,33 +73,24 @@ if (pd.concat([df_user_test, df_user_agg]).drop_duplicates(keep=False).shape)[0]
 else:
     print("TEST USERS INSIGHTS: KO. See log file ")
     pd.concat([df_user_test.add_prefix("TEST_"), df_user_agg.add_prefix("SCRIPT_")], axis=1).to_csv(
-        agg_data_dir + "TEST_doublons.csv", index=False)
-"""
+        agg_data_dir + "TEST_USER_doublons.csv", index=False)
+
 
 
 query_geo="SELECT year, start_station_name as name_station,  lat_start_station, long_start_station, count(1) number_trips "\
-    "FROM(SELECT   year(start_time) as year , start_station_name, cast(start_station_latitude as signed) lat_start_station, cast(start_station_longitude as signed) as long_start_station  "\
+    "FROM(SELECT   year(start_time) as year , start_station_name, start_station_latitude as lat_start_station, start_station_longitude as long_start_station  "\
     f"FROM {table_name})tab "\
     "GROUP BY year, start_station_name, lat_start_station, long_start_station "
 
-df_geo_test=pd.read_sql(query_geo, mysql_engine)
+df_geo_test = pd.read_sql(query_geo, mysql_engine)
+df_geo_agg = pd.read_csv(agg_data_dir + "geo_data.csv")
 
+df_geo_test = df_geo_test.astype({"lat_start_station": "float", "long_start_station": "float"})
+if pd.concat([df_geo_test, df_geo_agg]).drop_duplicates(keep=False).shape[0] == 0:
+    print("TEST GEO INSIGHTS: OK")
+else:
+    print("TEST GEO INSIGHTS: KO. See log file ")
+    pd.concat([df_geo_test.add_prefix("TEST_"), df_geo_agg.add_prefix("SCRIPT_")], axis=1).to_csv(
+        agg_data_dir + "TEST_GEO_doublons.csv", index=False)
 
-df_geo_agg=pd.read_csv(agg_data_dir+"geo_data.csv")
-print("df_geo_agg.dtypes")
-df_geo_agg.astype({"lat_start_station":"object", "long_start_station":"float"}).dtypes
-print(df_geo_agg.dtypes)
-
-print("df_geo_test.dtypes")
-#df_geo_test=df_geo_test.astype({"lat_start_station":"object", "long_start_station":"object"}, copy=True).dtypes
-
-#df_geo_test.astype({"lat_start_station":"float", "long_start_station":"float"}).dtypes
-#df_geo_agg.sort_values(by=["year", "name_station", "lat_start_station", "long_start_station"], ascending=[True, False, True, True], inplace=True)
-#df_geo_test.sort_values(by=["year", "name_station", "lat_start_station", "long_start_station"], ascending=[True, False, True, True], inplace=True)
-#df_geo_test.sort_values(by=["year", "name_station", "lat_start_station", "long_start_station"], ascending=[True, False, True, True], inplace=True)
-
-print(df_geo_test.equals(df_geo_agg))
-
-print(df_geo_test)
-print(pd.concat([df_geo_test, df_geo_agg]).drop_duplicates(keep=False).shape)
 print("PROCESS ENDS")
